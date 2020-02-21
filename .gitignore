@@ -1,3 +1,11 @@
+# For virtualenvs:
+*_env*
+# For testing scripts:
+*testing_*
+# IDE files:
+.idea/*
+
+
 
 # Created by https://www.gitignore.io/api/python,pycharm,windows,jupyternotebooks
 # Edit at https://www.gitignore.io/?templates=python,pycharm,windows,jupyternotebooks
