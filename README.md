@@ -27,3 +27,6 @@ To install the requirements:
 
 To start a Jupyter notebook server  in current directory execute:  `jupyter notebook`. Your browser should open with a UI that allows you to open any notebook in that dir. [More info](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/execute.html)
 
+## Architecture diagram
+
+To edit the architecture diagram, `architecture_design.xml` can be loaded in [this](draw.io) website.
