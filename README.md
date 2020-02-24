@@ -1,5 +1,17 @@
 # indigitall-test
+
 Indigitall Backend test for company admission. 
+
+## Contents
+
+This project is composed of the following main components:
+
+1. `extraction_transformation.ipynb`: The jupyter notebook that solves the first part of the exercise.
+2. `/architecture_design`: Contains all the files needed for the second part of the exercise.
+   1. `.pdf`: The final submission in a easy to read format.
+   2. `.md` The final submission in an editable format.
+   3. `.png`: The diagram in an easy to read format.
+   4. `.xml`: The editable diagram. It can be loaded into [draw.io](https://draw.io).
 
 ## Install requirements
 

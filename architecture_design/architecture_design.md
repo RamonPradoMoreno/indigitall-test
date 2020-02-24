@@ -6,9 +6,11 @@ For the architecture design I will go through some general design decision then 
 
 Since this is a small team and there is no systems engineer I would recommend to use a cloud service provider. They usually have simple web interfaces and [serverless applications](https://aws.amazon.com/es/serverless/) that require 0 maintenance. I would use [AWS](https://aws.amazon.com/es/what-is-aws/?nc2=h_ql_le_int) because I have experience using it and find it extremely complete and easy to use.
 
-All decisions should be discussed with all the team but since I cannot do that I'm assuming that AWS will be used and all my recommendations followed. I have not tested all of this and don't have practical experience with all the modules but based on the docs I have read I think it will work and would love to do it. :)
+All decisions should be discussed with all the team but since I cannot do that I am assuming that AWS will be used and all my recommendations followed. I have not tested all of this and don't have practical experience with all the modules but based on the docs I have read I think it will work and would love to do it. :)
 
 ## Diagram
+
+![architecture_design](E:\Dev\Repositories\indigitall-test\architecture_design\architecture_design.png)
 
 ## Module Explanation
 
@@ -39,7 +41,7 @@ I think this is a key piece of the architecture because, from a simple UI you ca
 
 ### Microservices
 
-Microservices are simple applications that take care of one "relatively simple" job. Instead of working on an application that solves all our problems we will break our problems in simpler problems and create a microservice for each one of them. This is done to avoid complex applications and isolate functionalities. If there is a problem it will not affect all the system, only one of our microservices.
+Microservices are simple applications that take care of one "relatively simple" job. Instead of working on an application that solves all our problems we will break our problems in simpler tasks and create a microservice for each one of them. This is done to avoid complex applications and isolate functionalities. If there is a problem it will not affect all the system, only one of our microservices.
 
 To make the deployment of our microservices easy I suggest to use [Docker](https://www.docker.com/why-docker) because:
 
@@ -50,35 +52,31 @@ To make the deployment of our microservices easy I suggest to use [Docker](https
 
 AWS, as always, knows about this stuff and has serverless integration with Docker's containers through the [Amazon Elastic Container Service](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/). This means that container management will not require server maintenance  and will be done easily. (The docs say it is easy but I've checked and it does not look that easy without a systems engineer, there are other alternative and maybe easier ways of doing it.)
 
+#### ETL
 
+All rest requests related with data loading (incremental and massive) will be sent to this service. It will send requests to external services, process the response's data and load it in our databases. It also might have some kind of scheduled behavior for incremental loads.
 
-Diseña una arquitectura para almacenar, limpiar, explotar y presentar estos datos. El uso de esta plataforma será:
+#### Front
 
-* Dispondrá de información de niveles de NO2, las estaciones donde se han recogido y datos de temperaturas de Madrid
-* Hay dos tipos de cargas de información:
+The front application will need data to build it's views, it will ask for it using rest requests that the Api Gateway will redirect to this microservice. The service will then gather all the necessary information from the database, transform it to be used in the front application and send them back in a http response.
 
-    * Masivas, puntuales: sirven para hacer una carga inicial de datos. También, de forma esporádica, para corregir información capturada en tiempo real.
-    * Incrementales. Los orígenes son:
+#### Predictive
 
-        * Datos en tiempo real (actualizados cada hora) de contaminación, más información [aquí](https://datos.madrid.es/portal/site/egob/menuitem.c05c1f754a33a9fbe4b2e4b284f1a5a0/?vgnextoid=41e01e007c9db410VgnVCM2000000c205a0aRCRD&vgnextchannel=374512b9ace9f310VgnVCM100000171f5a0aRCRD&vgnextfmt=default)
-        * Datos de temperaturas. Se capturarán consultando alguna API de servicios metereológicos.
+This service might be complex, it may require some extra resources like more CPU I/O or Memory. This means that the container needs to be run in a bigger machine ([EC2](https://aws.amazon.com/ec2/?nc1=h_ls)) not using the [Amazon Elastic Container Service](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) but this does not affect our architecture. 
 
-* La explotación será:
+From an architectural point of view, this service is not that complex. It will receive some requests, process the data received and send a response back. The process might take a long time, a lot of resources, access to a data warehouse, model manipulation, etc. If complexity increases a lot then the microservice can be split in two, for example model management microservice and prediction microservice. 
 
-    * Vía API: los usuarios de la plataforma pueden consultar y descargar los datos por API.
-    * Vía portal web: el equipo de Front diseñará un portal para permitir que los usuarios visualicen mapas de calor, gráficas de evolución, etc.
-    * Modelo predictivo: el equipo de Data creará un modelo para predecir la contaminación de los próximos 3 días.
-    * Análisis _adhoc_: además, el equipo de Data necesita explorar y crear pequeños análisis _adhoc_ que puedan surgir. P.e. prevemos que el Ayuntamiento nos asigne la tarea de medir el efecto de las medidas tomadas en la legislatura pasada: Madrid Central, restricciones los días de aviso de contaminación, etc.
+Examples of requests might be:
 
-* El volumen de los datos: profundidad histórica desde el año 2001.
-* La cantidad de usuarios: 500-1000 usuarios diarios.
-* Las características de nuestro equipo: somos una _startup_ pequeña y tecnológica, con unos pocos perfiles por disciplina: _front_, _back_ y _data_. No tenemos perfiles especializados de sistemas.
+1. Asking for contamination values for a given future date and it's confidence level.
+2. Telling the service to train or test a model (might be in the database or given as a file attachment in the request).
+3. Changing training parameters such as algorithm, distance, weights, etc. 
 
-No hace falta que programes nada en esta parte. Simplemente describe en la forma que creas más conveniente cómo lo harías (p.e. con un diagrama de arquitectura + comentarios).
+#### Adhoc
 
-### Anexo
+You can add as many microservices as needed for any task imaginable and, with the architecture explained here, you will always know:
 
-Puedes ver la información adicional aquí:
-
-* [Estaciones de medida](https://gist.github.com/koldLight/533038c852ca0a546da247292b5d9ab9)
-* [Temperaturas horarias](https://gist.github.com/koldLight/90577c60ad4267d4df490e6239cebf58)
+1. Adding a new microservice will require minimum extra code in other modules (zero if the new functionality is isolated), only configuration in the API gateway.
+2. The authentication and authorization will be managed by our API gateway. We will only need to create new users and groups.
+3. Deployment will be easy and almost automatic.
+4. Logging and monitoring will be exactly as in the other microservices as long as the new microservice uses the libraries and tools provided by amazon.
